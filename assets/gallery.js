@@ -25,7 +25,7 @@ function closeStartMenu() {
     document.getElementById('startBtn').classList.remove('active');
 }
 
-// --- KONTROL MUAT GAMBAR SEKALIGUS (CARA 2 VERSI CEPAT) ---
+// --- KONTROL MUAT GAMBAR DUA ARAH (ATAS & BAWAH SEKALIGUS) ---
 function openFolder(folderName) {
     closeStartMenu();
     const win = document.getElementById('galleryWindow');
@@ -36,33 +36,48 @@ function openFolder(folderName) {
     grid.innerHTML = ''; 
     win.style.display = 'flex';
 
-    // Tentukan perkiraan jumlah maksimal foto di dalam foldermu (misal: 30)
-    const MAX_ESTIMATED_PHOTOS = 30; 
+    // Tentukan perkiraan jumlah maksimal foto di folder kamu
+    const MAX_PHOTOS = 30; 
+    const midPoint = Math.floor(MAX_PHOTOS / 2);
 
-    // Mencari dan memuat semua gambar berurutan secara BERSAMAAN
-    for (let i = 1; i <= MAX_ESTIMATED_PHOTOS; i++) {
-        const imgUrl = `${folderName}/${i}.jpg`; 
+    // Fungsi internal untuk memicu unduhan gambar ke grid
+    function triggerLoad(index) {
+        const imgUrl = `${folderName}/${index}.jpg`; 
         const img = new Image();
         
         img.onload = function() {
+            // Cek apakah gambar ini sudah pernah dimasukkan (mencegah duplikat di titik tengah)
+            if (grid.querySelector(`[data-index="${index}"]`)) return;
+
             const photoItem = document.createElement('div');
             photoItem.className = 'photo-item';
-            photoItem.setAttribute('data-index', i); 
-            photoItem.innerHTML = `<img src="${imgUrl}" alt="Foto ${i}">`;
+            photoItem.setAttribute('data-index', index); 
+            photoItem.innerHTML = `<img src="${imgUrl}" alt="Foto ${index}">`;
             
             photoItem.onclick = function() { 
                 openLightbox(imgUrl); 
             };
             
             grid.appendChild(photoItem);
-            sortGridItems(grid); // Urutkan posisi kotak agar tetap rapi 1, 2, 3
+            sortGridItems(grid); // Tetap rapi diurutkan 1, 2, 3 meskipun datangnya acak
         };
         
-        img.src = imgUrl; 
+        img.src = imgUrl;
+    }
+
+    // Eksekusi dua arah secara BERSAMAAN (Paralel)
+    // 1. Jalur Atas (Maju dari 1 ke tengah)
+    for (let i = 1; i <= midPoint; i++) {
+        triggerLoad(i);
+    }
+    
+    // 2. Jalurn Bawah (Mundur dari MAX ke tengah)
+    for (let j = MAX_PHOTOS; j > midPoint; j--) {
+        triggerLoad(j);
     }
 }
 
-// Fungsi pembantu untuk merapikan posisi gambar di dalam jendela
+// Fungsi pembantu untuk merapikan urutan kotak di web
 function sortGridItems(grid) {
     const items = Array.from(grid.children);
     items.sort((a, b) => {
