@@ -25,7 +25,7 @@ function closeStartMenu() {
     document.getElementById('startBtn').classList.remove('active');
 }
 
-// --- KONTROL SUPER ULTRA FAST UNTUK RIBUAN GAMBAR (Hingga 3000.jpg) ---
+// --- KONTROL PEMANGGILAN MANUAL SUPER CEPAT (1 SAMPAI 100) ---
 function openFolder(folderName) {
     closeStartMenu();
     const win = document.getElementById('galleryWindow');
@@ -33,47 +33,54 @@ function openFolder(folderName) {
     const grid = document.getElementById('photoGridContent');
     
     title.textContent = `${folderName.toUpperCase()}.EXE`;
-    grid.innerHTML = ''; // Bersihkan grid setiap folder dibuka
+    grid.innerHTML = ''; // Bersihkan isi grid lama
     win.style.display = 'flex';
 
-    // Batas maksimal list pemanggil sesuai permintaanmu (3000 foto)
-    const MAX_PHOTOS = 3000; 
+    // DAFTAR URUTAN LIST PEMANGGIL MANUAl (1 SAMPAI 100)
+    const manualList = [
+        1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+        11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+        21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
+        31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
+        41, 42, 43, 44, 45, 46, 47, 48, 49, 50,
+        51, 52, 53, 54, 55, 56, 57, 58, 59, 60,
+        61, 62, 63, 64, 65, 66, 67, 68, 69, 70,
+        71, 72, 73, 74, 75, 76, 77, 78, 79, 80,
+        81, 82, 83, 84, 85, 86, 87, 88, 89, 90,
+        91, 92, 93, 94, 95, 96, 97, 98, 99, 100
+    ];
 
-    // Tembak semua list pemanggil dari 1 sampai 3000 secara bersamaan (Paralel)
-    for (let i = 1; i <= MAX_PHOTOS; i++) {
-        const imgUrl = `${folderName}/${i}.jpg`; 
+    // Proses pemanggilan daftar manual di atas secara bersamaan
+    manualList.forEach(num => {
+        // Otomatis membentuk format jalur: folderName/1.jpg, folderName/2.jpg, dst.
+        const imgUrl = `${folderName}/${num}.jpg`; 
         const img = new Image();
-        
-        // Aktifkan fitur lazy load bawaan browser agar tidak membebani RAM
-        img.loading = "lazy"; 
+        img.loading = "lazy"; // Menjaga performa RAM browser agar tidak crash
         
         img.onload = function() {
-            // JIKA FOTO ADA: Buat kontainer kotaknya secara instan
+            // JIKA FOTO DITEMUKAN: Buat kotaknya dan tampilkan ke layar
             const photoItem = document.createElement('div');
             photoItem.className = 'photo-item';
-            photoItem.setAttribute('data-index', i); 
-            photoItem.innerHTML = `<img src="${imgUrl}" alt="Foto ${i}" loading="lazy">`;
+            photoItem.setAttribute('data-index', num); 
+            photoItem.innerHTML = `<img src="${imgUrl}" alt="Foto ${num}" loading="lazy">`;
             
             photoItem.onclick = function() { 
                 openLightbox(imgUrl); 
             };
             
             grid.appendChild(photoItem);
-            
-            // Susun ulang posisi kotak agar tetap berurutan 1, 2, 3... meskipun proses download-nya acak
-            sortGridItems(grid);
+            sortGridItems(grid); // Urutkan posisi kotak agar tetap rapi dari angka 1-100
         };
         
         img.onerror = function() {
-            // JIKA FOTO TIDAK ADA: Diamkan saja, otomatis dilewati dan tidak merusak web
+            // JIKA FOTO TIDAK ADA: Otomatis diabaikan tanpa merusak susunan grid web
         };
         
-        // Mulai jalankan list pemanggil ke server GitHub
-        img.src = imgUrl; 
-    }
+        img.src = imgUrl; // Tembak pemanggilan file langsung ke server GitHub
+    });
 }
 
-// Fungsi pembantu untuk merapikan urutan kotak berdasarkan angka data-index
+// Fungsi pembantu untuk mengurutkan posisi kotak berdasarkan atribut data-index
 function sortGridItems(grid) {
     const items = Array.from(grid.children);
     items.sort((a, b) => {
