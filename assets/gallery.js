@@ -1,11 +1,3 @@
-// --- KONFIGURASI PENGATURAN SUPER FAST ---
-const MAX_PHOTOS_PER_FOLDER = 30; // Maksimal foto per folder yang akan di-cache
-// Daftar folder yang ada di desktop kamu
-const FOLDERS_TO_PRELOAD = ['camera', 'wisuda', 'kucing']; 
-
-// Wadah memori untuk menyimpan elemen gambar yang sudah jadi (Cache)
-const imageCache = {};
-
 // --- DUAL BOOT GATEWAY ---
 function bootToWindows() {
     document.getElementById('splash-screen').classList.add('hidden');
@@ -17,73 +9,6 @@ function bootToCyberpunk() {
     setTimeout(() => {
         window.location.href = '2/cyber/index.html';
     }, 500);
-}
-
-// --- FUNGSI PRELOAD (RAHASIA KECEPATAN INSTAN) ---
-function preloadAllGalleries() {
-    FOLDERS_TO_PRELOAD.forEach(folderName => {
-        imageCache[folderName] = [];
-
-        // Hantam semua request foto dari angka 1-30 secara paralel saat web baru dibuka
-        for (let i = 1; i <= MAX_PHOTOS_PER_FOLDER; i++) {
-            const imgUrl = `${folderName}/${i}.jpg`;
-            const img = new Image();
-            
-            img.onload = function() {
-                // Buat elemen kotaknya sekarang juga di memori (belum dimasukkan ke layar)
-                const photoItem = document.createElement('div');
-                photoItem.className = 'photo-item';
-                photoItem.setAttribute('data-index', i);
-                photoItem.innerHTML = `<img src="${imgUrl}" alt="Foto ${i}">`;
-                
-                photoItem.onclick = function() { 
-                    openLightbox(imgUrl); 
-                };
-                
-                // Simpan kotak yang sudah jadi ini ke dalam cache memori
-                imageCache[folderName].push(photoItem);
-            };
-            
-            img.src = imgUrl; // Unduh gambar diam-diam di latar belakang
-        }
-    });
-}
-
-// --- KONTROL MUAT GAMBAR (INSTAN DARI CACHE MEMORI) ---
-function openFolder(folderName) {
-    closeStartMenu();
-    const win = document.getElementById('galleryWindow');
-    const title = document.getElementById('windowTitle');
-    const grid = document.getElementById('photoGridContent');
-    
-    title.textContent = `${folderName.toUpperCase()}.EXE`;
-    grid.innerHTML = ''; 
-    win.style.display = 'flex';
-
-    // Ambil kotak gambar yang sudah di-download duluan dari memori cache
-    const cachedItems = imageCache[folderName] || [];
-
-    if (cachedItems.length === 0) {
-        // Jaga-jaga jika internet super lemot dan preloading belum selesai saat folder diklik
-        grid.innerHTML = '<div style="padding:10px; color:#000; font-size:18px;">Initializing files... Silakan coba klik folder lagi.</div>';
-        return;
-    }
-
-    // Masukkan semua kotak gambar secara instan sekaligus ke layar
-    cachedItems.forEach(item => grid.appendChild(item));
-    
-    // Rapikan urutan angkanya 1, 2, 3...
-    sortGridItems(grid);
-}
-
-// Fungsi pembantu untuk merapikan urutan kotak di web
-function sortGridItems(grid) {
-    const items = Array.from(grid.children);
-    items.sort((a, b) => {
-        return parseInt(a.getAttribute('data-index')) - parseInt(b.getAttribute('data-index'));
-    });
-    grid.innerHTML = '';
-    items.forEach(item => grid.appendChild(item));
 }
 
 // --- KONTROL START MENU ---
@@ -100,6 +25,64 @@ function closeStartMenu() {
     document.getElementById('startBtn').classList.remove('active');
 }
 
+// --- KONTROL SUPER ULTRA FAST UNTUK RIBUAN GAMBAR (Hingga 3000.jpg) ---
+function openFolder(folderName) {
+    closeStartMenu();
+    const win = document.getElementById('galleryWindow');
+    const title = document.getElementById('windowTitle');
+    const grid = document.getElementById('photoGridContent');
+    
+    title.textContent = `${folderName.toUpperCase()}.EXE`;
+    grid.innerHTML = ''; // Bersihkan grid setiap folder dibuka
+    win.style.display = 'flex';
+
+    // Batas maksimal list pemanggil sesuai permintaanmu (3000 foto)
+    const MAX_PHOTOS = 3000; 
+
+    // Tembak semua list pemanggil dari 1 sampai 3000 secara bersamaan (Paralel)
+    for (let i = 1; i <= MAX_PHOTOS; i++) {
+        const imgUrl = `${folderName}/${i}.jpg`; 
+        const img = new Image();
+        
+        // Aktifkan fitur lazy load bawaan browser agar tidak membebani RAM
+        img.loading = "lazy"; 
+        
+        img.onload = function() {
+            // JIKA FOTO ADA: Buat kontainer kotaknya secara instan
+            const photoItem = document.createElement('div');
+            photoItem.className = 'photo-item';
+            photoItem.setAttribute('data-index', i); 
+            photoItem.innerHTML = `<img src="${imgUrl}" alt="Foto ${i}" loading="lazy">`;
+            
+            photoItem.onclick = function() { 
+                openLightbox(imgUrl); 
+            };
+            
+            grid.appendChild(photoItem);
+            
+            // Susun ulang posisi kotak agar tetap berurutan 1, 2, 3... meskipun proses download-nya acak
+            sortGridItems(grid);
+        };
+        
+        img.onerror = function() {
+            // JIKA FOTO TIDAK ADA: Diamkan saja, otomatis dilewati dan tidak merusak web
+        };
+        
+        // Mulai jalankan list pemanggil ke server GitHub
+        img.src = imgUrl; 
+    }
+}
+
+// Fungsi pembantu untuk merapikan urutan kotak berdasarkan angka data-index
+function sortGridItems(grid) {
+    const items = Array.from(grid.children);
+    items.sort((a, b) => {
+        return parseInt(a.getAttribute('data-index')) - parseInt(b.getAttribute('data-index'));
+    });
+    grid.innerHTML = '';
+    items.forEach(item => grid.appendChild(item));
+}
+
 function closeFolder() {
     document.getElementById('galleryWindow').style.display = 'none';
 }
@@ -111,9 +94,6 @@ function openLightbox(url) {
     lightboxImg.src = url;
     lightbox.classList.add('active');
 }
-
-// Fungsi preload dijalankan otomatis begitu browser selesai memuat file JS ini
-preloadAllGalleries();
 
 function closeLightbox() {
     document.getElementById('lightbox').classList.remove('active');
